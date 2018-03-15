@@ -73,9 +73,15 @@ namespace Microsoft.Samples.Discovery
         // The following are helper methods required by the Proxy implementation  
         void AddOnlineService(EndpointDiscoveryMetadata endpointDiscoveryMetadata)
         {
+            EndpointAddress address = endpointDiscoveryMetadata.Address;
+            if (endpointDiscoveryMetadata.ListenUris[0] != null)
+            {
+                address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
+            }
             lock (this.onlineServices)
             {
-                this.onlineServices[endpointDiscoveryMetadata.Address] = endpointDiscoveryMetadata;
+                this.onlineServices[address] = endpointDiscoveryMetadata;
+                Console.WriteLine(this.onlineServices.Count);
             }
 
             PrintDiscoveryMetadata(endpointDiscoveryMetadata, "Adding");
@@ -85,9 +91,14 @@ namespace Microsoft.Samples.Discovery
         {
             if (endpointDiscoveryMetadata != null)
             {
+                EndpointAddress address = endpointDiscoveryMetadata.Address;
+                if (endpointDiscoveryMetadata.ListenUris[0] != null)
+                {
+                    address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
+                }
                 lock (this.onlineServices)
                 {
-                    this.onlineServices.Remove(endpointDiscoveryMetadata.Address);
+                    this.onlineServices.Remove(address);
                 }
 
                 PrintDiscoveryMetadata(endpointDiscoveryMetadata, "Removing");
