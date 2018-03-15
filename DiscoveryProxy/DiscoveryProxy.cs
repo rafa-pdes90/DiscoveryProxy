@@ -81,7 +81,6 @@ namespace Microsoft.Samples.Discovery
             lock (this.onlineServices)
             {
                 this.onlineServices[address] = endpointDiscoveryMetadata;
-                Console.WriteLine(this.onlineServices.Count);
             }
 
             PrintDiscoveryMetadata(endpointDiscoveryMetadata, "Adding");
