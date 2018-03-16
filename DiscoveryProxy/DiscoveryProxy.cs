@@ -5,9 +5,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Discovery;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace Microsoft.Samples.Discovery
 {
@@ -78,8 +80,21 @@ namespace Microsoft.Samples.Discovery
             {
                 address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
             }
+
+            string serviceName = address.ToString().Split('/').Last();
+            string serviceType = endpointDiscoveryMetadata.ContractTypeNames[0].Name;
+            int count = 0;
+
             lock (this.onlineServices)
             {
+                foreach (EndpointDiscoveryMetadata metadata in this.onlineServices.Values)
+                {
+                    string metadataServiceType = metadata.ContractTypeNames[0].Name;
+                    count += this.onlineServices.Values.Count(x => serviceType == metadataServiceType);
+                }
+
+                var xName = new XElement("Name", serviceName + count);
+                endpointDiscoveryMetadata.Extensions.Add(xName);
                 this.onlineServices[address] = endpointDiscoveryMetadata;
             }
 
