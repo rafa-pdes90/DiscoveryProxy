@@ -19,10 +19,12 @@ namespace Microsoft.Samples.Discovery
     {
         // Repository to store EndpointDiscoveryMetadata. A database or a flat file could also be used instead.  
         Dictionary<EndpointAddress, EndpointDiscoveryMetadata> onlineServices;
+        private Dictionary<string, int> ServicesCount { get; set; }
 
         public DiscoveryProxyService()
         {
             this.onlineServices = new Dictionary<EndpointAddress, EndpointDiscoveryMetadata>();
+            this.ServicesCount = new Dictionary<string, int>();
         }
 
         // OnBeginOnlineAnnouncement method is called when a Hello message is received by the Proxy  
@@ -82,17 +84,23 @@ namespace Microsoft.Samples.Discovery
             }
 
             string serviceName = address.ToString().Split('/').Last();
-            string serviceType = endpointDiscoveryMetadata.ContractTypeNames[0].Name;
             int count = 0;
+
+            lock (this.ServicesCount)
+            {
+                if (this.ServicesCount.ContainsKey(serviceName))
+                {
+                    count = this.ServicesCount[serviceName];
+                    this.ServicesCount[serviceName] += 1;
+                }
+                else
+                {
+                    this.ServicesCount[serviceName] = 1;
+                }
+            }
 
             lock (this.onlineServices)
             {
-                foreach (EndpointDiscoveryMetadata metadata in this.onlineServices.Values)
-                {
-                    string metadataServiceType = metadata.ContractTypeNames[0].Name;
-                    count += this.onlineServices.Values.Count(x => serviceType == metadataServiceType);
-                }
-
                 var xName = new XElement("Name", serviceName + count);
                 endpointDiscoveryMetadata.Extensions.Add(xName);
                 this.onlineServices[address] = endpointDiscoveryMetadata;
@@ -123,30 +131,30 @@ namespace Microsoft.Samples.Discovery
         {
             lock (this.onlineServices)
             {
-                if (findRequestContext.Criteria.Extensions.Count > 0)
+                foreach (EndpointDiscoveryMetadata endpointDiscoveryMetadata in this.onlineServices.Values)
                 {
-                    foreach (EndpointDiscoveryMetadata endpointDiscoveryMetadata in this.onlineServices.Values)
+                    if (!findRequestContext.Criteria.IsMatch(endpointDiscoveryMetadata)) continue;
+                    if (findRequestContext.Criteria.Extensions.Count > 0)
                     {
-                        foreach (XElement endpointXElem in endpointDiscoveryMetadata.Extensions)
+                        int i = 0;
+                        while (i < findRequestContext.Criteria.Extensions.Count)
                         {
-                            foreach (XElement criteriaXElem in findRequestContext.Criteria.Extensions)
+                            string criteriaValue = findRequestContext.Criteria.Extensions[i].Value;
+                            if (endpointDiscoveryMetadata.Extensions.All(x => x.Value != criteriaValue))
                             {
-                                if (endpointXElem.Value.Equals(criteriaXElem.Value))
-                                {
-                                    findRequestContext.AddMatchingEndpoint(endpointDiscoveryMetadata);
-                                }
+                                break;
                             }
+                            i += 1;
                         }
-                    }
-                }
-                else
-                {
-                    foreach (EndpointDiscoveryMetadata endpointDiscoveryMetadata in this.onlineServices.Values)
-                    {
-                        if (findRequestContext.Criteria.IsMatch(endpointDiscoveryMetadata))
+
+                        if (i == findRequestContext.Criteria.Extensions.Count)
                         {
                             findRequestContext.AddMatchingEndpoint(endpointDiscoveryMetadata);
                         }
+                    }
+                    else
+                    {
+                        findRequestContext.AddMatchingEndpoint(endpointDiscoveryMetadata);
                     }
                 }
             }
