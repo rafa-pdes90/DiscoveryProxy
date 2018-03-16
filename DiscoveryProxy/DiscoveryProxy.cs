@@ -125,7 +125,12 @@ namespace Microsoft.Samples.Discovery
             {
                 foreach (EndpointDiscoveryMetadata endpointDiscoveryMetadata in this.onlineServices.Values)
                 {
-                    if (criteria.Address == endpointDiscoveryMetadata.Address)
+                    EndpointAddress address = endpointDiscoveryMetadata.Address;
+                    if (endpointDiscoveryMetadata.ListenUris[0] != null)
+                    {
+                        address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
+                    }
+                    if (criteria.Address == address)
                     {
                         matchingEndpoint = endpointDiscoveryMetadata;
                     }
