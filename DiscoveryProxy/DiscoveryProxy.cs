@@ -123,11 +123,30 @@ namespace Microsoft.Samples.Discovery
         {
             lock (this.onlineServices)
             {
-                foreach (EndpointDiscoveryMetadata endpointDiscoveryMetadata in this.onlineServices.Values)
+                if (findRequestContext.Criteria.Extensions.Count > 0)
                 {
-                    if (findRequestContext.Criteria.IsMatch(endpointDiscoveryMetadata))
+                    foreach (EndpointDiscoveryMetadata endpointDiscoveryMetadata in this.onlineServices.Values)
                     {
-                        findRequestContext.AddMatchingEndpoint(endpointDiscoveryMetadata);
+                        foreach (XElement endpointXElem in endpointDiscoveryMetadata.Extensions)
+                        {
+                            foreach (XElement criteriaXElem in findRequestContext.Criteria.Extensions)
+                            {
+                                if (endpointXElem.Value.Equals(criteriaXElem.Value))
+                                {
+                                    findRequestContext.AddMatchingEndpoint(endpointDiscoveryMetadata);
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (EndpointDiscoveryMetadata endpointDiscoveryMetadata in this.onlineServices.Values)
+                    {
+                        if (findRequestContext.Criteria.IsMatch(endpointDiscoveryMetadata))
+                        {
+                            findRequestContext.AddMatchingEndpoint(endpointDiscoveryMetadata);
+                        }
                     }
                 }
             }
