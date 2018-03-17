@@ -84,24 +84,44 @@ namespace Microsoft.Samples.Discovery
             }
 
             string serviceName = address.ToString().Split('/').Last();
-            int count = 0;
+            int count = -1;
 
-            lock (this.ServicesCount)
+            if (!serviceName.StartsWith("_"))
             {
-                if (this.ServicesCount.ContainsKey(serviceName))
+                count += 1;
+                lock (this.ServicesCount)
                 {
-                    count = this.ServicesCount[serviceName];
-                    this.ServicesCount[serviceName] += 1;
-                }
-                else
-                {
-                    this.ServicesCount[serviceName] = 1;
+                    if (this.ServicesCount.ContainsKey(serviceName))
+                    {
+                        count = this.ServicesCount[serviceName];
+                        this.ServicesCount[serviceName] += 1;
+                    }
+                    else
+                    {
+                        this.ServicesCount[serviceName] = 1;
+                    }
                 }
             }
 
             lock (this.onlineServices)
             {
-                var xName = new XElement("Name", serviceName + count);
+                XElement xName;
+                if (count == -1)
+                {
+                    serviceName = serviceName.Substring(1);
+                    xName = new XElement("Name", serviceName);
+
+                    EndpointDiscoveryMetadata oldService = this.onlineServices.Values.FirstOrDefault
+                        (x => x.Extensions.Any(y => y.Name.LocalName=="Name" && y.Value==serviceName));
+                    if (oldService != null)
+                    {
+                        RemoveOnlineService(oldService);
+                    }
+                }
+                else
+                {
+                    xName = new XElement("Name", serviceName + count);
+                }
                 endpointDiscoveryMetadata.Extensions.Add(xName);
                 this.onlineServices[address] = endpointDiscoveryMetadata;
             }
