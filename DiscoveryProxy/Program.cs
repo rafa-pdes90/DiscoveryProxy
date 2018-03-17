@@ -23,8 +23,8 @@ namespace Microsoft.Samples.Discovery
             Uri probeEndpointAddress = new Uri("net.tcp://localhost:8001/Probe");
             Uri announcementEndpointAddress = new Uri("net.tcp://localhost:9021/Announcement");
             
-            var probePortSharingBinding = new NetTcpBinding();
-            var announcementPortSharingBinding = new NetTcpBinding();
+            var probePortSharingBinding = new NetTcpBinding(SecurityMode.None);
+            var announcementPortSharingBinding = new NetTcpBinding(SecurityMode.None);
 
             if (IsAdministrator())
             {
