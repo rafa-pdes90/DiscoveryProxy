@@ -92,21 +92,16 @@ namespace WCFDiscoveryProxy
             string serviceName = address.ToString().Split('/').Last();
             int count = -1;
 
-            if (!serviceName.StartsWith("_"))
+            foreach (XElement customMetadata in endpointDiscoveryMetadata.Extensions)
             {
-                count += 1;
+                if (customMetadata.Name != "Parent") continue;
+                
                 lock (this.ServicesCount)
                 {
-                    if (this.ServicesCount.ContainsKey(serviceName))
-                    {
-                        count = this.ServicesCount[serviceName];
-                        this.ServicesCount[serviceName] += 1;
-                    }
-                    else
-                    {
-                        this.ServicesCount[serviceName] = 1;
-                    }
+                    this.ServicesCount.TryGetValue(serviceName, out count); //count=0 if serviceName doesn't exist
+                    this.ServicesCount[serviceName] = count + 1;
                 }
+                break;
             }
 
             lock (this.onlineServices)
@@ -114,7 +109,6 @@ namespace WCFDiscoveryProxy
                 XElement xName;
                 if (count == -1)
                 {
-                    serviceName = serviceName.Substring(1);
                     xName = new XElement("Name", serviceName);
 
                     EndpointDiscoveryMetadata oldService = this.onlineServices.Values.FirstOrDefault
@@ -128,6 +122,7 @@ namespace WCFDiscoveryProxy
                 {
                     xName = new XElement("Name", serviceName + count);
                 }
+
                 endpointDiscoveryMetadata.Extensions.Add(xName);
                 this.onlineServices[address] = endpointDiscoveryMetadata;
             }
