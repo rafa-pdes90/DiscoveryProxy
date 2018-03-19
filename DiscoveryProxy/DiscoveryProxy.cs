@@ -77,8 +77,14 @@ namespace Microsoft.Samples.Discovery
         // The following are helper methods required by the Proxy implementation  
         void AddOnlineService(EndpointDiscoveryMetadata endpointDiscoveryMetadata)
         {
-            EndpointAddress address = endpointDiscoveryMetadata.Address;
-            if (endpointDiscoveryMetadata.ListenUris[0] != null)
+            EndpointAddress address;
+            // Check to see if the endpoint has a listenUri and if it differs from the Address URI
+            if (endpointDiscoveryMetadata.ListenUris.Count == 0 || 
+                endpointDiscoveryMetadata.Address.Uri == endpointDiscoveryMetadata.ListenUris[0])
+            {
+                address = endpointDiscoveryMetadata.Address;
+            }
+            else
             {
                 address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
             }
@@ -133,11 +139,18 @@ namespace Microsoft.Samples.Discovery
         {
             if (endpointDiscoveryMetadata != null)
             {
-                EndpointAddress address = endpointDiscoveryMetadata.Address;
-                if (endpointDiscoveryMetadata.ListenUris[0] != null)
+                EndpointAddress address;
+                // Check to see if the endpoint has a listenUri and if it differs from the Address URI
+                if (endpointDiscoveryMetadata.ListenUris.Count == 0 ||
+                    endpointDiscoveryMetadata.Address.Uri == endpointDiscoveryMetadata.ListenUris[0])
+                {
+                    address = endpointDiscoveryMetadata.Address;
+                }
+                else
                 {
                     address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
                 }
+
                 lock (this.onlineServices)
                 {
                     this.onlineServices.Remove(address);
@@ -187,11 +200,18 @@ namespace Microsoft.Samples.Discovery
             {
                 foreach (EndpointDiscoveryMetadata endpointDiscoveryMetadata in this.onlineServices.Values)
                 {
-                    EndpointAddress address = endpointDiscoveryMetadata.Address;
-                    if (endpointDiscoveryMetadata.ListenUris[0] != null)
+                    EndpointAddress address;
+                    // Check to see if the endpoint has a listenUri and if it differs from the Address URI
+                    if (endpointDiscoveryMetadata.ListenUris.Count == 0 ||
+                        endpointDiscoveryMetadata.Address.Uri == endpointDiscoveryMetadata.ListenUris[0])
+                    {
+                        address = endpointDiscoveryMetadata.Address;
+                    }
+                    else
                     {
                         address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
                     }
+
                     if (criteria.Address == address)
                     {
                         matchingEndpoint = endpointDiscoveryMetadata;
@@ -206,7 +226,7 @@ namespace Microsoft.Samples.Discovery
             Console.WriteLine("\n**** " + verb + " service of the following type from cache. ");
             foreach (XmlQualifiedName contractName in endpointDiscoveryMetadata.ContractTypeNames)
             {
-                Console.WriteLine("** " + contractName.ToString());
+                Console.WriteLine("** " + contractName);
                 break;
             }
             Console.WriteLine("**** Operation Completed");
