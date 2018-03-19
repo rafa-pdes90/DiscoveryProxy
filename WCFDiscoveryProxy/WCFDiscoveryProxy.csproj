@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{1C8F0B9E-03E1-45C9-8E87-546640E00124}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>DiscoveryProxy</RootNamespace>
-    <AssemblyName>DiscoveryProxy</AssemblyName>
+    <RootNamespace>WCFDiscoveryProxy</RootNamespace>
+    <AssemblyName>WCFDiscoveryProxy</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

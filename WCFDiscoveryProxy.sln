@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscoveryProxy", "DiscoveryProxy\DiscoveryProxy.csproj", "{1C8F0B9E-03E1-45C9-8E87-546640E00124}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WCFDiscoveryProxy", "WCFDiscoveryProxy\WCFDiscoveryProxy.csproj", "{1C8F0B9E-03E1-45C9-8E87-546640E00124}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +20,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {E7B70F1D-38B0-464E-AFB2-606FA9202846}
+		SolutionGuid = {D225A2F2-EB37-4B46-8B8A-5DF357D437D8}
 	EndGlobalSection
 EndGlobal

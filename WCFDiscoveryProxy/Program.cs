@@ -8,7 +8,7 @@ using System.Security.Principal;
 using System.ServiceModel;
 using System.ServiceModel.Discovery;
 
-namespace Microsoft.Samples.Discovery
+namespace WCFDiscoveryProxy
 {
     class Program
     {

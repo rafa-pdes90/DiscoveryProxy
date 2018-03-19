@@ -6,7 +6,7 @@
 using System;
 using System.Threading;
 
-namespace Microsoft.Samples.Discovery
+namespace WCFDiscoveryProxy
 {
     abstract class AsyncResult : IAsyncResult
     {

@@ -11,7 +11,7 @@ using System.ServiceModel.Discovery;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace Microsoft.Samples.Discovery
+namespace WCFDiscoveryProxy
 {
     // Implement DiscoveryProxy by extending the DiscoveryProxy class and overriding the abstract methods  
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Multiple)]
