@@ -137,27 +137,25 @@ namespace WCFDiscoveryProxy
 
         void RemoveOnlineService(EndpointDiscoveryMetadata endpointDiscoveryMetadata)
         {
-            if (endpointDiscoveryMetadata != null)
+            if (endpointDiscoveryMetadata == null) return;
+            EndpointAddress address;
+            // Check to see if the endpoint has a listenUri and if it differs from the Address URI
+            if (endpointDiscoveryMetadata.ListenUris.Count == 0 ||
+                endpointDiscoveryMetadata.Address.Uri == endpointDiscoveryMetadata.ListenUris[0])
             {
-                EndpointAddress address;
-                // Check to see if the endpoint has a listenUri and if it differs from the Address URI
-                if (endpointDiscoveryMetadata.ListenUris.Count == 0 ||
-                    endpointDiscoveryMetadata.Address.Uri == endpointDiscoveryMetadata.ListenUris[0])
-                {
-                    address = endpointDiscoveryMetadata.Address;
-                }
-                else
-                {
-                    address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
-                }
-
-                lock (this.onlineServices)
-                {
-                    this.onlineServices.Remove(address);
-                }
-
-                PrintDiscoveryMetadata(endpointDiscoveryMetadata, "Removing");
+                address = endpointDiscoveryMetadata.Address;
             }
+            else
+            {
+                address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
+            }
+
+            lock (this.onlineServices)
+            {
+                this.onlineServices.Remove(address);
+            }
+
+            PrintDiscoveryMetadata(endpointDiscoveryMetadata, "Removing");
         }
 
         void MatchFromOnlineService(FindRequestContext findRequestContext)
