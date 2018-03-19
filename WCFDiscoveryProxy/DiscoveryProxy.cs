@@ -94,7 +94,7 @@ namespace WCFDiscoveryProxy
 
             foreach (XElement customMetadata in endpointDiscoveryMetadata.Extensions)
             {
-                if (customMetadata.Name != "Parent") continue;
+                if (customMetadata.Name.LocalName != "Parent") continue;
                 
                 lock (this.ServicesCount)
                 {
