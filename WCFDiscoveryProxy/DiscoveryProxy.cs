@@ -146,7 +146,7 @@ namespace WCFDiscoveryProxy
                 }
                 else
                 {
-                    var xId = new XElement("ID", serviceId);
+                    var xId = new XElement("Id", serviceId);
                     endpointDiscoveryMetadata.Extensions.Add(xId);
                 }
 
