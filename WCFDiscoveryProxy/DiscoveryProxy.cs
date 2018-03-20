@@ -126,7 +126,10 @@ namespace WCFDiscoveryProxy
 
                     foreach (string child in serviceChildren)
                     {
-                        this.ServicesCount[child] = 0;
+                        if (!this.ServicesCount.ContainsKey(child))
+                        {
+                            this.ServicesCount[child] = 0;
+                        }
                     }
                 }
 
