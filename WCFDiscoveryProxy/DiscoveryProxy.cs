@@ -98,6 +98,7 @@ namespace WCFDiscoveryProxy
                         break;
                 }
             }
+            if (serviceName == string.Empty) throw new Exception("Service name is missing.");
 
             EndpointAddress address;
             // Check to see if the endpoint has a listenUri and if it differs from the Address URI
@@ -118,7 +119,7 @@ namespace WCFDiscoveryProxy
                 {
                     if (serviceParent != string.Empty)
                     {
-                        if (!this.ServicesCount.ContainsKey(serviceName)) throw new Exception("No parent available");
+                        if (!this.ServicesCount.ContainsKey(serviceName)) throw new Exception("No parent available.");
                         serviceId = this.ServicesCount[serviceName];
                         this.ServicesCount[serviceName] += 1;
                     }
