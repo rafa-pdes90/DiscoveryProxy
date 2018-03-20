@@ -77,6 +77,8 @@ namespace WCFDiscoveryProxy
         // The following are helper methods required by the Proxy implementation  
         void AddOnlineService(EndpointDiscoveryMetadata endpointDiscoveryMetadata)
         {
+            if (endpointDiscoveryMetadata.ContractTypeNames.Any(x => x.Name == "IMetadataExchange")) return;
+
             if (endpointDiscoveryMetadata.Extensions.Count == 0) throw new Exception("Endpoint is invalid.");
 
             string serviceName = string.Empty;
@@ -156,7 +158,12 @@ namespace WCFDiscoveryProxy
 
         void RemoveOnlineService(EndpointDiscoveryMetadata endpointDiscoveryMetadata)
         {
-            if (endpointDiscoveryMetadata == null) return;
+            if (endpointDiscoveryMetadata == null ||
+                endpointDiscoveryMetadata.ContractTypeNames.Any(x => x.Name == "IMetadataExchange"))
+            {
+                return;
+            }
+
             EndpointAddress address;
             // Check to see if the endpoint has a listenUri and if it differs from the Address URI
             if (endpointDiscoveryMetadata.ListenUris.Count == 0 ||
