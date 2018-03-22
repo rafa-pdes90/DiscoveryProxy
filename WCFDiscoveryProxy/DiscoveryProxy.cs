@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
+using System.ServiceModel.Description;
 using System.ServiceModel.Discovery;
 using System.Xml;
 using System.Xml.Linq;
@@ -18,13 +19,11 @@ namespace WCFDiscoveryProxy
     public class DiscoveryProxyService : DiscoveryProxy
     {
         // Repository to store EndpointDiscoveryMetadata. A database or a flat file could also be used instead.  
-        Dictionary<EndpointAddress, EndpointDiscoveryMetadata> onlineServices;
-        private Dictionary<string, int> ServicesCount { get; set; }
+        private readonly Dictionary<string, EndpointDiscoveryMetadata> _onlineServices;
 
         public DiscoveryProxyService()
         {
-            this.onlineServices = new Dictionary<EndpointAddress, EndpointDiscoveryMetadata>();
-            this.ServicesCount = new Dictionary<string, int>();
+            this._onlineServices = new Dictionary<string, EndpointDiscoveryMetadata>();
         }
 
         // OnBeginOnlineAnnouncement method is called when a Hello message is received by the Proxy  
@@ -77,80 +76,58 @@ namespace WCFDiscoveryProxy
         // The following are helper methods required by the Proxy implementation  
         void AddOnlineService(EndpointDiscoveryMetadata endpointDiscoveryMetadata)
         {
-            if (endpointDiscoveryMetadata.ContractTypeNames.Any(x => x.Name == "IMetadataExchange")) return;
+            if (endpointDiscoveryMetadata == null) return;
 
-            if (endpointDiscoveryMetadata.Extensions.Count == 0) throw new Exception("Endpoint is invalid.");
+            var mexCriteria = new FindCriteria(typeof(IMetadataExchange));
+            if (mexCriteria.IsMatch(endpointDiscoveryMetadata)) return;
 
-            string serviceName = string.Empty;
-            string serviceParent = string.Empty;
-            string[] serviceChildren = {};
+            if (endpointDiscoveryMetadata.Extensions.Count == 0)
+                throw new Exception("Endpoint is invalid.");
+
+            string serviceContract = string.Empty;
+            string serviceId = string.Empty;
+            string serviceRequirements = string.Empty;
+
             foreach (XElement customMetadata in endpointDiscoveryMetadata.Extensions)
             {
-                if (customMetadata.Value == string.Empty) continue;
                 switch (customMetadata.Name.LocalName)
                 {
-                    case "Name":
-                        serviceName = customMetadata.Value;
+                    case "Contract":
+                        serviceContract = customMetadata.Value;
                         break;
-                    case "Parent":
-                        serviceParent = customMetadata.Value;
+                    case "Id":
+                        serviceId = customMetadata.Value;
                         break;
-                    case "Children":
-                        serviceChildren = customMetadata.Value.Split();
+                    case "Requirements":
+                        serviceRequirements = customMetadata.Value;
                         break;
                 }
             }
-            if (serviceName == string.Empty) throw new Exception("Service name is missing.");
 
-            EndpointAddress address;
-            // Check to see if the endpoint has a listenUri and if it differs from the Address URI
-            if (endpointDiscoveryMetadata.ListenUris.Count == 0 || 
-                endpointDiscoveryMetadata.Address.Uri == endpointDiscoveryMetadata.ListenUris[0])
-            {
-                address = endpointDiscoveryMetadata.Address;
-            }
-            else
-            {
-                address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
-            }
+            if (serviceContract == string.Empty)
+                throw new Exception("Service Contract is missing.");
 
-            lock (this.onlineServices)
+            lock (this._onlineServices)
             {
-                int serviceId = -1;
-                lock (this.ServicesCount)
+                if (serviceRequirements != string.Empty)
                 {
-                    if (serviceParent != string.Empty)
+                    if (!serviceRequirements.Split().All(req =>
+                        this._onlineServices.Values.Any(x =>
+                            x.Extensions.Any(y =>
+                                y.Name.LocalName == "Contract" && y.Value == req))))
                     {
-                        if (!this.ServicesCount.ContainsKey(serviceName)) throw new Exception("No parent available.");
-                        serviceId = this.ServicesCount[serviceName];
-                        this.ServicesCount[serviceName] += 1;
-                    }
-
-                    foreach (string child in serviceChildren)
-                    {
-                        if (!this.ServicesCount.ContainsKey(child))
-                        {
-                            this.ServicesCount[child] = 0;
-                        }
+                        throw new Exception("Service requirement couldn't be matched.");
                     }
                 }
 
-                if (serviceId == -1)
+                if (serviceId == string.Empty)
                 {
-                    EndpointDiscoveryMetadata oldService = this.onlineServices.Values.FirstOrDefault
-                        (x => x.Extensions.Any(y => y.Name.LocalName=="Name" && y.Value==serviceName));
-                    if (oldService != null)
-                    {
-                        RemoveOnlineService(oldService);
-                    }
+                    serviceId = serviceContract;
                 }
-                else
-                {
-                    var xId = new XElement("Id", serviceId);
-                    endpointDiscoveryMetadata.Extensions.Add(xId);
-                }
+                else if (this._onlineServices.ContainsKey(serviceId))
+                    throw new Exception("Service Id is duplicated.");
 
-                this.onlineServices[address] = endpointDiscoveryMetadata;
+                this._onlineServices[serviceId] = endpointDiscoveryMetadata;
             }
 
             PrintDiscoveryMetadata(endpointDiscoveryMetadata, "Adding");
@@ -158,45 +135,18 @@ namespace WCFDiscoveryProxy
 
         void RemoveOnlineService(EndpointDiscoveryMetadata endpointDiscoveryMetadata)
         {
-            if (endpointDiscoveryMetadata == null ||
-                endpointDiscoveryMetadata.ContractTypeNames.Any(x => x.Name == "IMetadataExchange"))
-            {
-                return;
-            }
+            if (endpointDiscoveryMetadata == null) return;
 
-            EndpointAddress address;
-            // Check to see if the endpoint has a listenUri and if it differs from the Address URI
-            if (endpointDiscoveryMetadata.ListenUris.Count == 0 ||
-                endpointDiscoveryMetadata.Address.Uri == endpointDiscoveryMetadata.ListenUris[0])
-            {
-                address = endpointDiscoveryMetadata.Address;
-            }
-            else
-            {
-                address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
-            }
+            var mexCriteria = new FindCriteria(typeof(IMetadataExchange));
+            if (mexCriteria.IsMatch(endpointDiscoveryMetadata)) return;
 
-            lock (this.onlineServices)
+            lock (this._onlineServices)
             {
-                this.onlineServices.Remove(address);
+                XElement delService = endpointDiscoveryMetadata.Extensions.FirstOrDefault(x => 
+                    x.Name.LocalName == "Id");
+                if (delService?.Value == null) return;
 
-                foreach (XElement customMetadata in endpointDiscoveryMetadata.Extensions)
-                {
-                    if (customMetadata.Name.LocalName != "Children") continue;
-                    foreach (string child in customMetadata.Value.Split())
-                    {
-                        if (this.onlineServices.Values.All(x => x.Extensions.Any(y =>
-                                y.Name.LocalName == "Name" && y.Value != child)))
-                        {
-                            break;
-                        }
-
-                        lock (this.ServicesCount)
-                        {
-                            this.ServicesCount.Remove(child);
-                        }
-                    }
-                }
+                this._onlineServices.Remove(delService.Value);
             }
 
             PrintDiscoveryMetadata(endpointDiscoveryMetadata, "Removing");
@@ -204,32 +154,40 @@ namespace WCFDiscoveryProxy
 
         void MatchFromOnlineService(FindRequestContext findRequestContext)
         {
-            lock (this.onlineServices)
+            lock (this._onlineServices)
             {
-                foreach (EndpointDiscoveryMetadata endpointDiscoveryMetadata in this.onlineServices.Values)
+                string foundId = findRequestContext.Criteria.Extensions.FirstOrDefault(x =>
+                    x.Name.LocalName == "Id")?.Value;
+                if (foundId != null)
                 {
-                    if (!findRequestContext.Criteria.IsMatch(endpointDiscoveryMetadata)) continue;
-                    if (findRequestContext.Criteria.Extensions.Count > 0)
+                    EndpointDiscoveryMetadata endpointMetadata = this._onlineServices[foundId];
+
+                    if (!findRequestContext.Criteria.IsMatch(endpointMetadata)) return;
+
+                    findRequestContext.AddMatchingEndpoint(endpointMetadata);
+                }
+                else
+                {
+                    foreach (EndpointDiscoveryMetadata endpointMetadata in this._onlineServices.Values)
                     {
-                        int i = 0;
-                        while (i < findRequestContext.Criteria.Extensions.Count)
+                        if (!findRequestContext.Criteria.IsMatch(endpointMetadata)) continue;
+
+                        int countdown = findRequestContext.Criteria.Extensions.Count;
+                        foreach (XElement elem in findRequestContext.Criteria.Extensions)
                         {
-                            string criteriaValue = findRequestContext.Criteria.Extensions[i].Value;
-                            if (endpointDiscoveryMetadata.Extensions.All(x => x.Value != criteriaValue))
+                            if (endpointMetadata.Extensions.All(x => 
+                                x.Name.LocalName == elem.Name.LocalName && x.Value != elem.Value))
                             {
                                 break;
                             }
-                            i += 1;
+
+                            countdown--;
                         }
 
-                        if (i == findRequestContext.Criteria.Extensions.Count)
+                        if (countdown == 0)
                         {
-                            findRequestContext.AddMatchingEndpoint(endpointDiscoveryMetadata);
+                            findRequestContext.AddMatchingEndpoint(endpointMetadata);
                         }
-                    }
-                    else
-                    {
-                        findRequestContext.AddMatchingEndpoint(endpointDiscoveryMetadata);
                     }
                 }
             }
@@ -238,26 +196,25 @@ namespace WCFDiscoveryProxy
         EndpointDiscoveryMetadata MatchFromOnlineService(ResolveCriteria criteria)
         {
             EndpointDiscoveryMetadata matchingEndpoint = null;
-            lock (this.onlineServices)
+            lock (this._onlineServices)
             {
-                foreach (EndpointDiscoveryMetadata endpointDiscoveryMetadata in this.onlineServices.Values)
+                foreach (EndpointDiscoveryMetadata endpointMetadata in this._onlineServices.Values)
                 {
                     EndpointAddress address;
                     // Check to see if the endpoint has a listenUri and if it differs from the Address URI
-                    if (endpointDiscoveryMetadata.ListenUris.Count == 0 ||
-                        endpointDiscoveryMetadata.Address.Uri == endpointDiscoveryMetadata.ListenUris[0])
+                    if (endpointMetadata.ListenUris.Count == 0 ||
+                        endpointMetadata.Address.Uri == endpointMetadata.ListenUris[0])
                     {
-                        address = endpointDiscoveryMetadata.Address;
+                        address = endpointMetadata.Address;
                     }
                     else
                     {
-                        address = new EndpointAddress(endpointDiscoveryMetadata.ListenUris[0]);
+                        address = new EndpointAddress(endpointMetadata.ListenUris[0]);
                     }
 
-                    if (criteria.Address == address)
-                    {
-                        matchingEndpoint = endpointDiscoveryMetadata;
-                    }
+                    if (criteria.Address != address) continue;
+                    matchingEndpoint = endpointMetadata;
+                    break;
                 }
             }
             return matchingEndpoint;
@@ -318,19 +275,19 @@ namespace WCFDiscoveryProxy
 
         sealed class OnResolveAsyncResult : AsyncResult
         {
-            EndpointDiscoveryMetadata matchingEndpoint;
+            private readonly EndpointDiscoveryMetadata _matchingEndpoint;
 
             public OnResolveAsyncResult(EndpointDiscoveryMetadata matchingEndpoint, AsyncCallback callback, object state)
                 : base(callback, state)
             {
-                this.matchingEndpoint = matchingEndpoint;
+                this._matchingEndpoint = matchingEndpoint;
                 this.Complete(true);
             }
 
             public static EndpointDiscoveryMetadata End(IAsyncResult result)
             {
                 OnResolveAsyncResult thisPtr = AsyncResult.End<OnResolveAsyncResult>(result);
-                return thisPtr.matchingEndpoint;
+                return thisPtr._matchingEndpoint;
             }
         }
     }

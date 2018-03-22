@@ -20,8 +20,8 @@ namespace WCFDiscoveryProxy
 
         public static void Main()
         {
-            Uri probeEndpointAddress = new Uri("net.tcp://localhost:8001/Probe");
-            Uri announcementEndpointAddress = new Uri("net.tcp://localhost:9021/Announcement");
+            var probeEndpointAddress = new Uri("net.tcp://localhost:8001/Probe");
+            var announcementEndpointAddress = new Uri("net.tcp://localhost:9021/Announcement");
             
             var probePortSharingBinding = new NetTcpBinding(SecurityMode.None);
             var announcementPortSharingBinding = new NetTcpBinding(SecurityMode.None);
@@ -33,17 +33,19 @@ namespace WCFDiscoveryProxy
             }
 
             // Host the DiscoveryProxy service  
-            ServiceHost proxyServiceHost = new ServiceHost(new DiscoveryProxyService());
+            var proxyServiceHost = new ServiceHost(new DiscoveryProxyService());
 
             try
             {
                 // Add DiscoveryEndpoint to receive Probe and Resolve messages  
-                DiscoveryEndpoint discoveryEndpoint = 
-                    new DiscoveryEndpoint(probePortSharingBinding, new EndpointAddress(probeEndpointAddress));
-                discoveryEndpoint.IsSystemEndpoint = false;
+                var discoveryEndpoint =
+                    new DiscoveryEndpoint(probePortSharingBinding, new EndpointAddress(probeEndpointAddress))
+                    {
+                        IsSystemEndpoint = false
+                    };
 
                 // Add AnnouncementEndpoint to receive Hello and Bye announcement messages  
-                AnnouncementEndpoint announcementEndpoint = 
+                var announcementEndpoint = 
                     new AnnouncementEndpoint(announcementPortSharingBinding, new EndpointAddress(announcementEndpointAddress));
                 
                 proxyServiceHost.AddServiceEndpoint(discoveryEndpoint);
