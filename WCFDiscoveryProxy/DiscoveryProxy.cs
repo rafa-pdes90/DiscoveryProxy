@@ -143,8 +143,10 @@ namespace WCFDiscoveryProxy
             lock (this._onlineServices)
             {
                 XElement delService = endpointDiscoveryMetadata.Extensions.FirstOrDefault(x => 
-                    x.Name.LocalName == "Id");
-                if (delService?.Value == null) return;
+                                          x.Name.LocalName == "Id" && x.Value != "") ??
+                                      endpointDiscoveryMetadata.Extensions.FirstOrDefault(x =>
+                                          x.Name.LocalName == "Contract" && x.Value != "");
+                if (delService == null) return;
 
                 this._onlineServices.Remove(delService.Value);
             }
