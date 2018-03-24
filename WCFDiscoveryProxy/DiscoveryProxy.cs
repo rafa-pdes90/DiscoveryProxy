@@ -76,7 +76,8 @@ namespace WCFDiscoveryProxy
         // The following are helper methods required by the Proxy implementation  
         void AddOnlineService(EndpointDiscoveryMetadata endpointDiscoveryMetadata)
         {
-            if (endpointDiscoveryMetadata == null) return;
+            if (endpointDiscoveryMetadata == null)
+                throw new Exception("Metadata is invalid.");
 
             var mexCriteria = new FindCriteria(typeof(IMetadataExchange));
             if (mexCriteria.IsMatch(endpointDiscoveryMetadata)) return;
@@ -135,7 +136,8 @@ namespace WCFDiscoveryProxy
 
         void RemoveOnlineService(EndpointDiscoveryMetadata endpointDiscoveryMetadata)
         {
-            if (endpointDiscoveryMetadata == null) return;
+            if (endpointDiscoveryMetadata == null)
+                throw new Exception("Metadata is invalid.");
 
             var mexCriteria = new FindCriteria(typeof(IMetadataExchange));
             if (mexCriteria.IsMatch(endpointDiscoveryMetadata)) return;
