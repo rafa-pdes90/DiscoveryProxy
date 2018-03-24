@@ -87,7 +87,6 @@ namespace WCFDiscoveryProxy
 
             string serviceContract = string.Empty;
             string serviceId = string.Empty;
-            string serviceRequirements = string.Empty;
 
             foreach (XElement customMetadata in endpointDiscoveryMetadata.Extensions)
             {
@@ -99,9 +98,6 @@ namespace WCFDiscoveryProxy
                     case "Id":
                         serviceId = customMetadata.Value;
                         break;
-                    case "Requirements":
-                        serviceRequirements = customMetadata.Value;
-                        break;
                 }
             }
 
@@ -110,17 +106,6 @@ namespace WCFDiscoveryProxy
 
             lock (this._onlineServices)
             {
-                if (serviceRequirements != string.Empty)
-                {
-                    if (!serviceRequirements.Split().All(req =>
-                        this._onlineServices.Values.Any(x =>
-                            x.Extensions.Any(y =>
-                                y.Name.LocalName == "Contract" && y.Value == req))))
-                    {
-                        throw new Exception("Service requirement couldn't be matched.");
-                    }
-                }
-
                 if (serviceId == string.Empty)
                 {
                     serviceId = serviceContract;
